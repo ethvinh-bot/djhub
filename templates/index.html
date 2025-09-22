@@ -1,1 +1,75 @@
-<h1>Hello DJHub</h1>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>DJHub — Listings</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    body { font-family: system-ui, -apple-system, Arial, sans-serif; margin: 24px; }
+    .listing { margin: 12px 0; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
+    #loadMore { display:block; margin:16px auto; padding:8px 14px; }
+    #loading { text-align:center; display:none; margin:8px 0; }
+  </style>
+</head>
+<body>
+  <h1>Latest Listings</h1>
+
+  <ul id="listing-feed" class="listings">
+    {% for l in listings %}
+      <li class="listing">
+        <h3>{{ l.title }}</h3>
+        <div>
+          {{ l.city or '' }}{% if l.date %} • {{ l.date }}{% endif %}
+          {% if l.budget %} • ${{ l.budget }}{% endif %}
+          {% if l.genres %} • {{ l.genres }}{% endif %}
+        </div>
+        {% if l.description %}<p>{{ l.description }}</p>{% endif %}
+      </li>
+    {% else %}
+      <li>No listings yet.</li>
+    {% endfor %}
+  </ul>
+
+  {% if has_next %}
+    <button id="loadMore" data-next="{{ next_page }}">Load more</button>
+  {% endif %}
+  <div id="loading">Loading…</div>
+
+  <script>
+    const btn = document.getElementById('loadMore');
+    const feed = document.getElementById('listing-feed');
+    const loading = document.getElementById('loading');
+
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        const next = btn.getAttribute('data-next');
+        if (!next) return;
+
+        loading.style.display = 'block';
+        btn.disabled = true;
+
+        const res = await fetch(`/api/listings?page=${encodeURIComponent(next)}`);
+        const { listings, has_next, next_page } = await res.json();
+
+        listings.forEach(l => {
+          const li = document.createElement('li');
+          li.className = 'listing';
+          li.innerHTML = `
+            <h3>${l.title}</h3>
+            <div>${l.city ?? ''}${l.date ? ' • ' + l.date : ''}${l.budget ? ' • $' + l.budget : ''}${l.genres ? ' • ' + l.genres : ''}</div>
+            ${l.description ? `<p>${l.description}</p>` : ''}`;
+          feed.appendChild(li);
+        });
+
+        loading.style.display = 'none';
+        if (has_next) {
+          btn.setAttribute('data-next', next_page);
+          btn.disabled = false;
+        } else {
+          btn.remove();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

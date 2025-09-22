@@ -1,4 +1,4 @@
-from app import db
+from djhub.extensions import db
 from datetime import datetime
 
 class Profile(db.Model):
@@ -20,3 +20,6 @@ class Listing(db.Model):
     genres = db.Column(db.String(200))
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+def __repr__(self):
+    return f"<Profile {self.username}>"
